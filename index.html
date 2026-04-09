@@ -1164,6 +1164,14 @@
                 transform: translateY(0);
             }
         }
+        /* ===== Toggle Switches ===== */
+        label:has(input[type="checkbox"]:checked) > span:first-of-type {
+            background: var(--primary-grad) !important;
+        }
+        label:has(input[type="checkbox"]:checked) > .toggle-knob {
+            left: 22px !important;
+        }
+
         /* ===== PIN Lock Screen ===== */
         .pin-overlay {
             position: fixed;
@@ -1432,6 +1440,9 @@
              
               <div class="nav-menu-item" id="side-borrower" onclick="switchView('borrower'); toggleSidebar();">
                   <i class="fas fa-hand-holding-dollar"></i> Lending Tracker
+              </div>
+              <div class="nav-menu-item" id="side-settings" onclick="handleSideNav('settings')">
+                  <i class="fas fa-gear"></i> Settings
               </div>
              <div style="height: 1px; background: var(--card-border); margin: 8px 16px; opacity: 0.5;"></div>
             <div class="nav-menu-item" id="side-about" onclick="handleSideNav('about')">
@@ -2380,6 +2391,257 @@
             </div>
         </div>
 
+        <!-- Settings View -->
+        <div id="settingsView" style="display: none; padding-top: 5px;">
+            <div class="tab-header" style="text-align:center; margin-bottom:15px; position: sticky; top: 10px; z-index: 10; background: var(--bg-color); padding: 8px 0; border-radius: 8px;">
+                <p style="font-size:14px; color:var(--text-main); margin:0; font-weight:700;">Settings</p>
+            </div>
+
+            <!-- Security Section -->
+            <div class="list-header" style="display:flex; align-items:center; gap:6px;"><i class="fas fa-shield-halved" style="color:var(--primary-grad); font-size:11px;"></i> Security</div>
+            <div class="card" style="padding:16px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">PIN Lock</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Require PIN on app launch</div>
+                    </div>
+                    <label style="position:relative; display:inline-block; width:44px; height:24px;">
+                        <input type="checkbox" id="settPinEnabled" onchange="togglePinLock()" style="opacity:0; width:0; height:0;">
+                        <span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:rgba(128,128,128,0.3); border-radius:24px; transition:0.3s;"></span>
+                        <span class="toggle-knob" style="position:absolute; top:2px; left:2px; width:20px; height:20px; background:white; border-radius:50%; transition:0.3s;"></span>
+                    </label>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">Change PIN</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Update your 4-digit PIN code</div>
+                    </div>
+                    <button onclick="openChangePinModal()" style="padding:6px 14px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--primary-grad); font-size:11px; font-weight:600; cursor:pointer;">Change</button>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">Auto-Lock Timeout</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Lock after inactivity</div>
+                    </div>
+                    <select id="settAutoLock" onchange="saveSettAutoLock()" style="padding:6px 10px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--text-main); font-size:11px; font-weight:600; outline:none;">
+                        <option value="0">Off</option>
+                        <option value="1">1 min</option>
+                        <option value="5">5 min</option>
+                        <option value="15">15 min</option>
+                        <option value="30">30 min</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Appearance Section -->
+            <div class="list-header" style="display:flex; align-items:center; gap:6px;"><i class="fas fa-palette" style="color:var(--primary-grad); font-size:11px;"></i> Appearance</div>
+            <div class="card" style="padding:16px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">Theme</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Choose your color scheme</div>
+                    </div>
+                    <button onclick="openThemeModal()" style="padding:6px 14px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--primary-grad); font-size:11px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                        <div id="settThemePreview" style="width:14px; height:14px; border-radius:50%; border:2px solid var(--card-border);"></div>
+                        <span id="settThemeName">Dark</span>
+                    </button>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">Currency</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Display currency symbol</div>
+                    </div>
+                    <select id="settCurrency" onchange="saveSettCurrency()" style="padding:6px 10px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--text-main); font-size:11px; font-weight:600; outline:none;">
+                        <option value="PKR">PKR (Rs)</option>
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (&#8364;)</option>
+                        <option value="GBP">GBP (&#163;)</option>
+                        <option value="SAR">SAR (&#65020;)</option>
+                        <option value="AED">AED (&#1583;.&#1573;)</option>
+                        <option value="INR">INR (&#8377;)</option>
+                    </select>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">Date Format</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">How dates are displayed</div>
+                    </div>
+                    <select id="settDateFormat" onchange="saveSettDateFormat()" style="padding:6px 10px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--text-main); font-size:11px; font-weight:600; outline:none;">
+                        <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                        <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Budget Section -->
+            <div class="list-header" style="display:flex; align-items:center; gap:6px;"><i class="fas fa-bullseye" style="color:var(--primary-grad); font-size:11px;"></i> Budget</div>
+            <div class="card" style="padding:16px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">Monthly Budget Limit</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Set default monthly spending cap</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <input type="number" id="settMonthlyBudget" placeholder="0" style="width:80px; padding:6px 8px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--text-main); font-size:12px; font-weight:600; outline:none; text-align:right;" onchange="saveSettMonthlyBudget()">
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">Budget Warning</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Alert when spending reaches threshold</div>
+                    </div>
+                    <select id="settBudgetWarning" onchange="saveSettBudgetWarning()" style="padding:6px 10px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--text-main); font-size:11px; font-weight:600; outline:none;">
+                        <option value="70">70%</option>
+                        <option value="80" selected>80%</option>
+                        <option value="90">90%</option>
+                        <option value="95">95%</option>
+                    </select>
+                </div>
+                <div style="margin-top:8px;">
+                    <div style="font-size:13px; font-weight:600; color:var(--text-main); margin-bottom:8px;">Per-Category Limits</div>
+                    <div id="settCategoryBudgets" style="display:flex; flex-direction:column; gap:8px;"></div>
+                </div>
+            </div>
+
+            <!-- Categories Section -->
+            <div class="list-header" style="display:flex; align-items:center; gap:6px;"><i class="fas fa-tags" style="color:var(--primary-grad); font-size:11px;"></i> Categories</div>
+            <div class="card" style="padding:16px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div style="font-size:13px; font-weight:600; color:var(--text-main);">Expense Categories</div>
+                    <button onclick="openCategoryModal()" style="padding:5px 12px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--primary-grad); font-size:10px; font-weight:600; cursor:pointer;">Manage</button>
+                </div>
+                <div id="settCategoryList" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:14px; border-top:1px solid var(--card-border);">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">Default Category</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Auto-selected for new expenses</div>
+                    </div>
+                    <select id="settDefaultCategory" onchange="saveSettDefaultCategory()" style="padding:6px 10px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--text-main); font-size:11px; font-weight:600; outline:none;"></select>
+                </div>
+            </div>
+
+            <!-- Notifications Section -->
+            <div class="list-header" style="display:flex; align-items:center; gap:6px;"><i class="fas fa-bell" style="color:var(--primary-grad); font-size:11px;"></i> Notifications</div>
+            <div class="card" style="padding:16px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">Budget Alerts</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Notify when nearing budget limit</div>
+                    </div>
+                    <label style="position:relative; display:inline-block; width:44px; height:24px;">
+                        <input type="checkbox" id="settBudgetAlerts" onchange="saveSettNotifications()" style="opacity:0; width:0; height:0;" checked>
+                        <span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:rgba(128,128,128,0.3); border-radius:24px; transition:0.3s;"></span>
+                        <span class="toggle-knob" style="position:absolute; top:2px; left:2px; width:20px; height:20px; background:white; border-radius:50%; transition:0.3s;"></span>
+                    </label>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">Loan Reminders</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Due date payment reminders</div>
+                    </div>
+                    <label style="position:relative; display:inline-block; width:44px; height:24px;">
+                        <input type="checkbox" id="settLoanReminders" onchange="saveSettNotifications()" style="opacity:0; width:0; height:0;" checked>
+                        <span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:rgba(128,128,128,0.3); border-radius:24px; transition:0.3s;"></span>
+                        <span class="toggle-knob" style="position:absolute; top:2px; left:2px; width:20px; height:20px; background:white; border-radius:50%; transition:0.3s;"></span>
+                    </label>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">Recurring Expenses</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Remind about recurring items</div>
+                    </div>
+                    <label style="position:relative; display:inline-block; width:44px; height:24px;">
+                        <input type="checkbox" id="settRecurringReminders" onchange="saveSettNotifications()" style="opacity:0; width:0; height:0;">
+                        <span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:rgba(128,128,128,0.3); border-radius:24px; transition:0.3s;"></span>
+                        <span class="toggle-knob" style="position:absolute; top:2px; left:2px; width:20px; height:20px; background:white; border-radius:50%; transition:0.3s;"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Data Management Section -->
+            <div class="list-header" style="display:flex; align-items:center; gap:6px;"><i class="fas fa-database" style="color:var(--primary-grad); font-size:11px;"></i> Data Management</div>
+            <div class="card" style="padding:16px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; margin-bottom:12px;">
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <button onclick="settExportJSON()" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--text-main); font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-download" style="color:var(--primary-grad); width:20px; text-align:center;"></i> Export All Data (JSON)
+                    </button>
+                    <button onclick="settExportExcel()" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--text-main); font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-file-excel" style="color:var(--success); width:20px; text-align:center;"></i> Export Expenses (Excel)
+                    </button>
+                    <button onclick="settExportPDF()" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--text-main); font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-file-pdf" style="color:var(--danger); width:20px; text-align:center;"></i> Export Report (PDF)
+                    </button>
+                    <div style="height:1px; background:var(--card-border); margin:4px 0;"></div>
+                    <button onclick="settImportJSON()" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--text-main); font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-upload" style="color:var(--warning); width:20px; text-align:center;"></i> Import / Restore Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- General Section -->
+            <div class="list-header" style="display:flex; align-items:center; gap:6px;"><i class="fas fa-sliders" style="color:var(--primary-grad); font-size:11px;"></i> General</div>
+            <div class="card" style="padding:16px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">Default View</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Screen shown on app open</div>
+                    </div>
+                    <select id="settDefaultView" onchange="saveSettDefaultView()" style="padding:6px 10px; border-radius:8px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--text-main); font-size:11px; font-weight:600; outline:none;">
+                        <option value="welcome">Home</option>
+                        <option value="dashboard">Dashboard</option>
+                        <option value="analytics">Analytics</option>
+                        <option value="accounts">Accounts</option>
+                    </select>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-main);">App Version</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Expense Tracking Premium</div>
+                    </div>
+                    <span style="font-size:12px; font-weight:700; color:var(--text-muted);">v2.0.0</span>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="list-header" style="display:flex; align-items:center; gap:6px;"><i class="fas fa-triangle-exclamation" style="color:var(--danger); font-size:11px;"></i> Danger Zone</div>
+            <div class="card" style="padding:16px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; margin-bottom:12px; border-color:rgba(239,68,68,0.2);">
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <button onclick="settClearExpenses()" style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(239,68,68,0.2); background:var(--bg-color); color:var(--danger); font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-trash" style="width:20px; text-align:center;"></i> Clear All Expenses
+                    </button>
+                    <button onclick="settClearLending()" style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(239,68,68,0.2); background:var(--bg-color); color:var(--danger); font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-eraser" style="width:20px; text-align:center;"></i> Clear All Lending Data
+                    </button>
+                    <button onclick="settResetApp()" style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.05); color:var(--danger); font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-rotate-left" style="width:20px; text-align:center;"></i> Reset App to Defaults
+                    </button>
+                </div>
+            </div>
+            <div style="height:20px;"></div>
+        </div>
+
+        <!-- Change PIN Modal -->
+        <div id="changePinModal" class="modal" style="display:none;">
+            <div class="modal-content" style="max-width:300px;">
+                <h2>Change PIN</h2>
+                <div class="input-group">
+                    <label>Current PIN</label>
+                    <input type="password" id="currentPinInput" maxlength="4" placeholder="Enter current PIN" inputmode="numeric" pattern="[0-9]*" style="letter-spacing:8px; text-align:center;">
+                </div>
+                <div class="input-group">
+                    <label>New PIN</label>
+                    <input type="password" id="newPinInput" maxlength="4" placeholder="Enter new 4-digit PIN" inputmode="numeric" pattern="[0-9]*" style="letter-spacing:8px; text-align:center;">
+                </div>
+                <div class="input-group">
+                    <label>Confirm New PIN</label>
+                    <input type="password" id="confirmPinInput" maxlength="4" placeholder="Confirm new PIN" inputmode="numeric" pattern="[0-9]*" style="letter-spacing:8px; text-align:center;">
+                </div>
+                <button class="save-btn" onclick="saveNewPin()">Save PIN</button>
+                <button class="cancel-btn" onclick="closeChangePinModal()">Cancel</button>
+            </div>
+        </div>
+
         <div id="addModal" class="modal">
             <div class="modal-content">
                 <h2 id="modalTitle">Add New Expense</h2>
@@ -2690,11 +2952,12 @@
 
                 // Re-render chart for color sync if necessary
                 setTimeout(updateChart, 50);
+                if (typeof updateSettThemePreview === 'function') updateSettThemePreview();
                 closeThemeModal();
             }
 
              // Tab Switching Logic
-             const views = ['welcome', 'dashboard', 'analytics', 'accounts', 'borrower', 'about', 'contact'];
+             const views = ['welcome', 'dashboard', 'analytics', 'accounts', 'borrower', 'settings', 'about', 'contact'];
             let activeViewName = 'welcome';
 
             function switchView(viewName) {
@@ -2739,6 +3002,7 @@
                   if (viewName === 'accounts') renderAccounts();
                   if (viewName === 'borrower') renderBorrowers();
                   if (viewName === 'welcome') renderWelcome();
+                  if (viewName === 'settings') { initSettings(); }
 
             }
 
@@ -6880,6 +7144,332 @@
         </div>
 
         <script>
+            // ================== SETTINGS SYSTEM ==================
+            const appSettings = {
+                load(key, fallback) { try { return JSON.parse(localStorage.getItem('sett_' + key)) ?? fallback; } catch { return fallback; } },
+                save(key, val) { localStorage.setItem('sett_' + key, JSON.stringify(val)); }
+            };
+
+            // --- Settings: SHA-256 helper ---
+            async function settSha256(msg) {
+                const buf = new TextEncoder().encode(msg);
+                const hash = await crypto.subtle.digest('SHA-256', buf);
+                return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+
+            // --- Settings: Security ---
+            function togglePinLock() {
+                const enabled = document.getElementById('settPinEnabled').checked;
+                appSettings.save('pinEnabled', enabled);
+            }
+
+            function openChangePinModal() {
+                document.getElementById('changePinModal').style.display = 'flex';
+                setTimeout(() => document.getElementById('changePinModal').classList.add('show'), 10);
+                document.getElementById('currentPinInput').value = '';
+                document.getElementById('newPinInput').value = '';
+                document.getElementById('confirmPinInput').value = '';
+            }
+
+            function closeChangePinModal() {
+                const m = document.getElementById('changePinModal');
+                m.classList.remove('show');
+                setTimeout(() => m.style.display = 'none', 300);
+            }
+
+            async function saveNewPin() {
+                const current = document.getElementById('currentPinInput').value;
+                const newPin = document.getElementById('newPinInput').value;
+                const confirm = document.getElementById('confirmPinInput').value;
+
+                if (!current || !newPin || !confirm) { alert('Please fill all fields.'); return; }
+
+                const currentHash = await settSha256(current);
+                const storedHash = appSettings.load('pinHash', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4');
+
+                if (currentHash !== storedHash) { alert('Current PIN is incorrect.'); return; }
+                if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) { alert('New PIN must be exactly 4 digits.'); return; }
+                if (newPin !== confirm) { alert('New PINs do not match.'); return; }
+
+                const newHash = await settSha256(newPin);
+                appSettings.save('pinHash', newHash);
+                alert('PIN changed successfully!');
+                closeChangePinModal();
+            }
+
+            function saveSettAutoLock() {
+                appSettings.save('autoLockMin', parseInt(document.getElementById('settAutoLock').value));
+            }
+
+            // --- Auto-lock timer ---
+            let autoLockTimer = null;
+            function resetAutoLockTimer() {
+                if (autoLockTimer) clearTimeout(autoLockTimer);
+                const minutes = appSettings.load('autoLockMin', 0);
+                if (minutes > 0) {
+                    autoLockTimer = setTimeout(() => {
+                        const overlay = document.getElementById('pinOverlay');
+                        if (overlay && appSettings.load('pinEnabled', true)) {
+                            overlay.classList.remove('hidden');
+                            document.body.style.overflow = 'hidden';
+                        }
+                    }, minutes * 60 * 1000);
+                }
+            }
+            ['click', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+                document.addEventListener(evt, resetAutoLockTimer, { passive: true });
+            });
+
+            // --- Settings: Appearance ---
+            function saveSettCurrency() {
+                const val = document.getElementById('settCurrency').value;
+                appSettings.save('currency', val);
+            }
+
+            function getSettCurrencySymbol() {
+                const map = { PKR: 'Rs', USD: '$', EUR: '\u20AC', GBP: '\u00A3', SAR: '\uFDFC', AED: 'AED', INR: '\u20B9' };
+                return map[appSettings.load('currency', 'PKR')] || 'Rs';
+            }
+
+            function saveSettDateFormat() {
+                appSettings.save('dateFormat', document.getElementById('settDateFormat').value);
+            }
+
+            function formatSettDate(dateStr) {
+                const d = new Date(dateStr);
+                const fmt = appSettings.load('dateFormat', 'DD/MM/YYYY');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const yyyy = d.getFullYear();
+                if (fmt === 'MM/DD/YYYY') return mm + '/' + dd + '/' + yyyy;
+                if (fmt === 'YYYY-MM-DD') return yyyy + '-' + mm + '-' + dd;
+                return dd + '/' + mm + '/' + yyyy;
+            }
+
+            // --- Settings: Budget ---
+            function saveSettMonthlyBudget() {
+                const val = parseInt(document.getElementById('settMonthlyBudget').value) || 0;
+                appSettings.save('defaultBudget', val);
+            }
+
+            function saveSettBudgetWarning() {
+                appSettings.save('budgetWarning', parseInt(document.getElementById('settBudgetWarning').value));
+            }
+
+            function renderCategoryBudgets() {
+                const container = document.getElementById('settCategoryBudgets');
+                if (!container) return;
+                const catBudgets = appSettings.load('categoryBudgets', {});
+                container.innerHTML = categoryTypes.map(cat => {
+                    const val = catBudgets[cat] || '';
+                    return '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+                        '<span style="font-size:11px; color:var(--text-muted); font-weight:500;">' + cat + '</span>' +
+                        '<input type="number" placeholder="No limit" value="' + val + '" ' +
+                        'onchange="saveSettCategoryBudget(\'' + cat.replace(/'/g, "\\'") + '\', this.value)" ' +
+                        'style="width:75px; padding:4px 6px; border-radius:6px; border:1px solid var(--card-border); background:var(--bg-color); color:var(--text-main); font-size:11px; text-align:right; outline:none;">' +
+                        '</div>';
+                }).join('');
+            }
+
+            function saveSettCategoryBudget(cat, val) {
+                const catBudgets = appSettings.load('categoryBudgets', {});
+                if (val && parseInt(val) > 0) catBudgets[cat] = parseInt(val);
+                else delete catBudgets[cat];
+                appSettings.save('categoryBudgets', catBudgets);
+            }
+
+            // --- Settings: Categories ---
+            function renderSettCategories() {
+                const container = document.getElementById('settCategoryList');
+                const select = document.getElementById('settDefaultCategory');
+                if (!container) return;
+                container.innerHTML = categoryTypes.map(cat =>
+                    '<span style="padding:4px 10px; border-radius:6px; background:var(--bg-color); border:1px solid var(--card-border); font-size:10px; font-weight:600; color:var(--text-main);">' + cat + '</span>'
+                ).join('');
+                if (select) {
+                    const defaultCat = appSettings.load('defaultCategory', categoryTypes[0]);
+                    select.innerHTML = categoryTypes.map(c => '<option value="' + c + '"' + (c === defaultCat ? ' selected' : '') + '>' + c + '</option>').join('');
+                }
+            }
+
+            function saveSettDefaultCategory() {
+                appSettings.save('defaultCategory', document.getElementById('settDefaultCategory').value);
+            }
+
+            // --- Settings: Notifications ---
+            function saveSettNotifications() {
+                appSettings.save('budgetAlerts', document.getElementById('settBudgetAlerts').checked);
+                appSettings.save('loanReminders', document.getElementById('settLoanReminders').checked);
+                appSettings.save('recurringReminders', document.getElementById('settRecurringReminders').checked);
+            }
+
+            // --- Settings: Data Management ---
+            function settExportJSON() {
+                const data = {
+                    expenses, accounts, managedYears, monthlyBudgets, categoryTypes, natureTypes,
+                    theme: currentTheme, isPrivate,
+                    borrowers: JSON.parse(localStorage.getItem('loans_v2') || '[]'),
+                    settings: {
+                        currency: appSettings.load('currency', 'PKR'),
+                        dateFormat: appSettings.load('dateFormat', 'DD/MM/YYYY'),
+                        defaultView: appSettings.load('defaultView', 'welcome'),
+                        pinEnabled: appSettings.load('pinEnabled', true),
+                        autoLockMin: appSettings.load('autoLockMin', 0),
+                        budgetWarning: appSettings.load('budgetWarning', 80),
+                        defaultBudget: appSettings.load('defaultBudget', 0),
+                        categoryBudgets: appSettings.load('categoryBudgets', {}),
+                        notifications: {
+                            budgetAlerts: appSettings.load('budgetAlerts', true),
+                            loanReminders: appSettings.load('loanReminders', true),
+                            recurringReminders: appSettings.load('recurringReminders', false)
+                        }
+                    }
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'expense_tracker_backup_' + new Date().toISOString().slice(0, 10) + '.json';
+                a.click();
+            }
+
+            function settExportExcel() {
+                if (typeof XLSX === 'undefined') { alert('Excel library not loaded.'); return; }
+                const ws = XLSX.utils.json_to_sheet(expenses.map(e => ({
+                    Title: e.title, Category: e.cat, Amount: e.price, Date: e.date, Nature: e.nature
+                })));
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Expenses');
+                XLSX.writeFile(wb, 'expenses_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+            }
+
+            function settExportPDF() {
+                if (typeof html2pdf === 'undefined') { alert('PDF library not loaded.'); return; }
+                const el = document.getElementById('dashboardView') || document.querySelector('.container');
+                html2pdf().set({
+                    margin: [8, 8], filename: 'expense_report_' + new Date().toISOString().slice(0, 10) + '.pdf',
+                    image: { type: 'png', quality: 1 }, html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                }).from(el).save();
+            }
+
+            function settImportJSON() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        try {
+                            const data = JSON.parse(ev.target.result);
+                            if (!confirm('This will replace all current data. Continue?')) return;
+
+                            if (data.expenses) localStorage.setItem('expenses', JSON.stringify(data.expenses));
+                            if (data.accounts) localStorage.setItem('accounts', JSON.stringify(data.accounts));
+                            if (data.managedYears) localStorage.setItem('managedYears', JSON.stringify(data.managedYears));
+                            if (data.monthlyBudgets) localStorage.setItem('monthlyBudgets', JSON.stringify(data.monthlyBudgets));
+                            if (data.categoryTypes) localStorage.setItem('categoryTypes', JSON.stringify(data.categoryTypes));
+                            if (data.natureTypes) localStorage.setItem('natureTypes', JSON.stringify(data.natureTypes));
+                            if (data.theme) localStorage.setItem('theme', data.theme);
+                            if (data.borrowers) localStorage.setItem('loans_v2', JSON.stringify(data.borrowers));
+
+                            if (data.settings) {
+                                Object.entries(data.settings).forEach(([k, v]) => {
+                                    if (k === 'notifications' && typeof v === 'object') {
+                                        Object.entries(v).forEach(([nk, nv]) => appSettings.save(nk, nv));
+                                    } else {
+                                        appSettings.save(k, v);
+                                    }
+                                });
+                            }
+
+                            alert('Data restored successfully! The page will reload.');
+                            location.reload();
+                        } catch (err) {
+                            alert('Invalid backup file: ' + err.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            }
+
+            // --- Settings: General ---
+            function saveSettDefaultView() {
+                appSettings.save('defaultView', document.getElementById('settDefaultView').value);
+            }
+
+            // --- Settings: Danger Zone ---
+            function settClearExpenses() {
+                if (!confirm('Delete ALL expenses? This cannot be undone.')) return;
+                if (!confirm('Are you absolutely sure?')) return;
+                expenses.length = 0;
+                saveExpenses();
+                alert('All expenses cleared.');
+                calculate();
+                renderWelcome();
+            }
+
+            function settClearLending() {
+                if (!confirm('Delete ALL lending data? This cannot be undone.')) return;
+                if (!confirm('Are you absolutely sure?')) return;
+                borrowers.length = 0;
+                saveBorrowers();
+                alert('All lending data cleared.');
+                renderBorrowers();
+            }
+
+            function settResetApp() {
+                if (!confirm('RESET the entire app? All data, settings, and preferences will be lost forever.')) return;
+                if (!confirm('FINAL WARNING: This will delete everything. Continue?')) return;
+                localStorage.clear();
+                alert('App has been reset. The page will reload.');
+                location.reload();
+            }
+
+            // --- Settings: Render/Init ---
+            function initSettings() {
+                // Security
+                const pinEnabled = appSettings.load('pinEnabled', true);
+                document.getElementById('settPinEnabled').checked = pinEnabled;
+                document.getElementById('settAutoLock').value = appSettings.load('autoLockMin', 0);
+
+                // Appearance
+                document.getElementById('settCurrency').value = appSettings.load('currency', 'PKR');
+                document.getElementById('settDateFormat').value = appSettings.load('dateFormat', 'DD/MM/YYYY');
+                updateSettThemePreview();
+
+                // Budget
+                const defaultBudget = appSettings.load('defaultBudget', 0);
+                if (defaultBudget > 0) document.getElementById('settMonthlyBudget').value = defaultBudget;
+                document.getElementById('settBudgetWarning').value = appSettings.load('budgetWarning', 80);
+                renderCategoryBudgets();
+
+                // Categories
+                renderSettCategories();
+
+                // Notifications
+                document.getElementById('settBudgetAlerts').checked = appSettings.load('budgetAlerts', true);
+                document.getElementById('settLoanReminders').checked = appSettings.load('loanReminders', true);
+                document.getElementById('settRecurringReminders').checked = appSettings.load('recurringReminders', false);
+
+                // General
+                document.getElementById('settDefaultView').value = appSettings.load('defaultView', 'welcome');
+
+                // Auto-lock
+                resetAutoLockTimer();
+            }
+
+            function updateSettThemePreview() {
+                const themeColors = { dark: '#0B0F19', light: '#FFFFFF', navy: '#0F172A', gray: '#1a1b1e', ruby: '#2A0A18', emerald: '#06372b' };
+                const themeNames = { dark: 'Onyx', light: 'Snow', navy: 'Navy', gray: 'Nordic', ruby: 'Ruby', emerald: 'Emerald' };
+                const preview = document.getElementById('settThemePreview');
+                const name = document.getElementById('settThemeName');
+                if (preview) preview.style.background = themeColors[currentTheme] || '#0B0F19';
+                if (name) name.textContent = themeNames[currentTheme] || 'Dark';
+            }
+
             // Initialise application on page load
             document.addEventListener('DOMContentLoaded', function() {
                 renderWelcome();
@@ -6887,6 +7477,15 @@
                 renderBorrowers();
                 renderLoans();
                 renderAccounts();
+                initSettings();
+
+                // Handle PIN lock based on settings
+                const pinEnabled = appSettings.load('pinEnabled', true);
+                const overlay = document.getElementById('pinOverlay');
+                if (!pinEnabled && overlay) {
+                    overlay.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
             });
             
         </script>
@@ -6894,7 +7493,7 @@
     <!-- PIN Lock Script -->
     <script>
         (function() {
-            var PIN_HASH = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4';
+            var PIN_HASH = (function() { try { return JSON.parse(localStorage.getItem('sett_pinHash')) || '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'; } catch(e) { return '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'; } })();
             var enteredPin = '';
             var maxLength = 4;
             var isLocked = false;
